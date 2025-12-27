@@ -28,38 +28,7 @@ import love from "./assets/emojis/love.png";
 import amused from "./assets/emojis/amused.png";
 import frightened from "./assets/emojis/frightened.png";
 import suspicious from "./assets/emojis/suspicious.png";
-
-export type EmojiName =
-  | "depressed"
-  | "happy"
-  | "stupid"
-  | "crazy"
-  | "sad"
-  | "surprised"
-  | "confident"
-  | "envious"
-  | "curious"
-  | "jealous"
-  | "confused"
-  | "sorry"
-  | "anxious"
-  | "withdraw"
-  | "angry"
-  | "enraged"
-  | "cold"
-  | "indifferent"
-  | "miserable"
-  | "bored"
-  | "ashamed"
-  | "hot"
-  | "determined"
-  | "bashful"
-  | "sick"
-  | "afraid"
-  | "love"
-  | "amused"
-  | "frightened"
-  | "suspicious";
+import type { EmojiName } from "./type";
 
 export const emojiImageMap: Record<EmojiName, HTMLImageElement> = {
   depressed: new Image(),

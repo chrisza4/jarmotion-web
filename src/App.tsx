@@ -1,35 +1,56 @@
 import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
 import "./App.css";
 import Jar from "./Jar";
+import { EMOJI_NAMES, type Emoji } from "./type";
 
+function initialEmojis(): Emoji[] {
+  const result: Emoji[] = [
+    { name: "happy", id: "1" },
+    { name: "confident", id: "2" },
+  ];
+  return result;
+}
+
+function pickRandomFromArray<T>(arr: readonly T[]): T {
+  const index = Math.floor(Math.random() * arr.length);
+  return arr[index];
+}
 function App() {
-  const [count, setCount] = useState(0);
-
+  const [emojis, setEmojis] = useState(initialEmojis());
   return (
     <>
-      {/*<div>
-         <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
+      <div>
+        <button
+          onClick={() => {
+            // Random Emoji
+            const thisEmojiName = pickRandomFromArray(EMOJI_NAMES);
+            setEmojis([
+              ...emojis,
+              { name: thisEmojiName, id: crypto.randomUUID() },
+            ]);
+          }}
+        >
+          Add Random Emotion
         </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
+        <button
+          onClick={() => {
+            const toRemove = pickRandomFromArray(emojis);
+            setEmojis(emojis.filter((c) => c.id !== toRemove.id));
+          }}
+        >
+          Remove random emojis
+        </button>
+        <button
+          onClick={() => {
+            setEmojis([]);
+          }}
+        >
+          Remove all
+        </button>
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p> */}
-      <Jar />
+      <div>
+        <Jar emojis={emojis} />
+      </div>
     </>
   );
 }

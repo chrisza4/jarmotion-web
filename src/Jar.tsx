@@ -10,6 +10,7 @@ import {
 import { useEffect, useRef } from "react";
 import { emojiImageMap } from "./emojiImages";
 import jarImageSrc from "./assets/jar.png";
+import type { Emoji, EmojiName } from "./type";
 
 const jarImage = new Image();
 jarImage.src = jarImageSrc;
@@ -19,6 +20,8 @@ jarImage.height = 343;
 const SCALE_FACTOR = 20;
 type BodyData = {
   type: string;
+  emojiName?: EmojiName;
+  id: string;
 };
 const isTestBed = false;
 
@@ -27,15 +30,22 @@ type ContainerProps = {
   width: number;
   height: number;
 };
+type EmojiProps = {
+  name: EmojiName;
+};
 
 type Entity = {
   type: EntityType;
   id: string;
   isDrew: boolean;
-  props?: ContainerProps;
+  props?: ContainerProps | EmojiProps;
 };
 
-function syncWorldWithEntities(world: World, entities: Entity[]) {
+function syncWorldWithEntities(
+  world: World,
+  entities: Entity[],
+  toRemoveIds: string[]
+) {
   const jarHeight = jarImage.height / SCALE_FACTOR;
   const jarWidth = jarImage.width / SCALE_FACTOR;
   function createContainer(entity: Entity) {
@@ -64,6 +74,7 @@ function syncWorldWithEntities(world: World, entities: Entity[]) {
       userData: {
         type: "emoji",
         id: entity.id,
+        emojiName: (entity.props as EmojiProps).name,
       },
     });
     body.setPosition(
@@ -77,6 +88,7 @@ function syncWorldWithEntities(world: World, entities: Entity[]) {
       restitution: 0.3,
     });
   }
+
   entities
     .filter((c) => !c.isDrew)
     .forEach((entity) => {
@@ -91,6 +103,16 @@ function syncWorldWithEntities(world: World, entities: Entity[]) {
       }
       entity.isDrew = true;
     });
+
+  const toRemoveIdsSet = new Set(toRemoveIds);
+  const toRemoveBodies: Body[] = [];
+  for (let body = world.getBodyList(); body; body = body.getNext()) {
+    const bodyData = body.getUserData() as BodyData;
+    if (toRemoveIdsSet.has(bodyData.id)) {
+      toRemoveBodies.push(body);
+    }
+  }
+  toRemoveBodies.forEach((b) => world.destroyBody(b));
 }
 
 class Renderer {
@@ -155,12 +177,17 @@ class Renderer {
         const x = pos.x * SCALE_FACTOR + canvas.width / 2;
         const y = canvas.height / 2 - pos.y * SCALE_FACTOR;
         ctx.translate(x, y);
-        const f = body.getFixtureList();
-        const c = f?.getShape() as Circle;
-        const imgWidth = c.m_radius * 2 * SCALE_FACTOR;
-        const imgHeight = c.m_radius * 2 * SCALE_FACTOR;
+        const fixture = body.getFixtureList();
+        if (!fixture) {
+          throw Error(
+            "No fixture in body for some reason. Please check emoji creation"
+          );
+        }
+        const circleShape = fixture?.getShape() as Circle;
+        const imgWidth = circleShape.m_radius * 2 * SCALE_FACTOR;
+        const imgHeight = circleShape.m_radius * 2 * SCALE_FACTOR;
         ctx.drawImage(
-          emojiImageMap.angry,
+          emojiImageMap[data.emojiName || "happy"],
           -imgWidth / 2,
           -imgHeight / 2,
           imgWidth,
@@ -179,15 +206,28 @@ class Renderer {
   }
 }
 
-export default function Jar() {
+type JarProps = {
+  emojis: Emoji[];
+};
+
+function emojiToEntity(e: Emoji): Entity {
+  return {
+    type: "emoji",
+    id: e.id,
+    isDrew: false,
+    props: {
+      name: e.name,
+    },
+  };
+}
+type EntitiesMap = Record<string, Entity>;
+export default function Jar(props: JarProps) {
   const worldRef = useRef<World | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const rendererRef = useRef<Renderer | null>(null);
-  const entities = useRef<Entity[]>([
-    { type: "container", isDrew: false, id: "container" },
-    { type: "emoji", isDrew: false, id: crypto.randomUUID() },
-    { type: "emoji", isDrew: false, id: crypto.randomUUID() },
-  ]);
+  const entities = useRef<EntitiesMap>({
+    container: { type: "container", isDrew: false, id: "container" },
+  });
   useEffect(() => {
     if (!worldRef.current) {
       worldRef.current = new World({
@@ -196,7 +236,7 @@ export default function Jar() {
       });
     }
     const world = worldRef.current;
-    syncWorldWithEntities(world, entities.current);
+    syncWorldWithEntities(world, Object.values(entities.current), []);
     if (isTestBed) {
       const tb = Testbed.mount();
       tb.start(world);
@@ -208,12 +248,49 @@ export default function Jar() {
       rendererRef.current.start();
     }
   }, []);
+  useEffect(() => {
+    let requiredSync = false;
+
+    const newEmojiIds = new Set<string>();
+
+    // Add new emojis
+    props.emojis.forEach((e) => {
+      if (!entities.current[e.id]) {
+        entities.current[e.id] = emojiToEntity(e);
+        requiredSync = true;
+      }
+      newEmojiIds.add(e.id);
+    });
+
+    // Remove emojis
+    const toRemoveIds: string[] = [];
+    Object.keys(entities.current).forEach((id) => {
+      if (id === "container") {
+        return;
+      }
+      if (!newEmojiIds.has(id)) {
+        delete entities.current[id];
+        toRemoveIds.push(id);
+        requiredSync = true;
+      }
+    });
+
+    if (!worldRef.current) {
+      return;
+    }
+    if (requiredSync) {
+      syncWorldWithEntities(
+        worldRef.current,
+        Object.values(entities.current),
+        toRemoveIds
+      );
+    }
+  }, [props.emojis]);
   if (isTestBed) {
     return null;
   }
   return (
     <>
-      start canvas
       <div>
         <canvas
           id="canvas"
@@ -223,7 +300,6 @@ export default function Jar() {
           ref={canvasRef}
         />
       </div>
-      end canvas
     </>
   );
 }
