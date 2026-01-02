@@ -6,6 +6,8 @@ Currently, spike and expriment on using Planck for animating Jar of emotion.
 bun dev
 ```
 
+Website: https://chrisza4.github.io/jarmotion-web/
+
 ## React Compiler
 
 The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
