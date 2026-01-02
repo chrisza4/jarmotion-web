@@ -295,7 +295,7 @@ export default function Jar(props: JarProps) {
         <canvas
           id="canvas"
           width={1200}
-          height={900}
+          height={600}
           style={{ backgroundColor: "gray" }}
           ref={canvasRef}
         />

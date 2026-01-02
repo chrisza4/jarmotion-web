@@ -2,6 +2,7 @@ import { useState } from "react";
 import "./App.css";
 import Jar from "./Jar";
 import { EMOJI_NAMES, type Emoji } from "./type";
+import { emojiImageMap } from "./emojiImages";
 
 function initialEmojis(): Emoji[] {
   const result: Emoji[] = [
@@ -47,6 +48,48 @@ function App() {
         >
           Remove all
         </button>
+      </div>
+      <div style={{ marginBottom: "20px" }}>
+        <h3>Select Emoji:</h3>
+        <div
+          style={{
+            display: "flex",
+            gap: "8px",
+            flexWrap: "wrap",
+            maxWidth: "fit-content",
+          }}
+        >
+          {EMOJI_NAMES.map((emojiName) => (
+            <button
+              key={emojiName}
+              onClick={() => {
+                setEmojis([
+                  ...emojis,
+                  { name: emojiName, id: crypto.randomUUID() },
+                ]);
+              }}
+              style={{
+                padding: "8px",
+                border: "2px solid #ccc",
+                borderRadius: "8px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              title={emojiName}
+            >
+              <img
+                src={emojiImageMap[emojiName].src}
+                alt={emojiName}
+                style={{
+                  width: "40px",
+                  height: "40px",
+                }}
+              />
+            </button>
+          ))}
+        </div>
       </div>
       <div>
         <Jar emojis={emojis} />
