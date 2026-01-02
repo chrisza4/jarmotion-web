@@ -292,13 +292,7 @@ export default function Jar(props: JarProps) {
   return (
     <>
       <div>
-        <canvas
-          id="canvas"
-          width={1200}
-          height={600}
-          style={{ backgroundColor: "gray" }}
-          ref={canvasRef}
-        />
+        <canvas id="canvas" height={600} ref={canvasRef} />
       </div>
     </>
   );
