@@ -118,7 +118,7 @@ function syncWorldWithEntities(
 class WorldStepper {
   private lastTime = 0;
   private accumulator = 0;
-  private fixedTimeStep = 1 / 60;
+  private fixedTimeStep = 1 / 150;
 
   start() {
     this.lastTime = performance.now();
@@ -139,7 +139,7 @@ class WorldStepper {
   }
 }
 
-class Renderer {
+class JarEngine {
   private world: World;
   private canvas: HTMLCanvasElement;
   private started: boolean = false;
@@ -250,17 +250,18 @@ type EntitiesMap = Record<string, Entity>;
 export default function Jar(props: JarProps) {
   const worldRef = useRef<World | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const rendererRef = useRef<Renderer | null>(null);
+  const jarEngineRef = useRef<JarEngine | null>(null);
   const entities = useRef<EntitiesMap>({
     container: { type: "container", isDrew: false, id: "container" },
   });
   useEffect(() => {
-    if (!worldRef.current) {
-      worldRef.current = new World({
-        gravity: { x: 0, y: -15 },
-        allowSleep: true,
-      });
+    if (worldRef.current) {
+      return;
     }
+    worldRef.current = new World({
+      gravity: { x: 0, y: -50 },
+      allowSleep: true,
+    });
     const world = worldRef.current;
     syncWorldWithEntities(world, Object.values(entities.current), []);
     if (isTestBed) {
@@ -270,8 +271,8 @@ export default function Jar(props: JarProps) {
       if (!canvasRef.current) {
         return;
       }
-      rendererRef.current = new Renderer(world, canvasRef.current);
-      rendererRef.current.start();
+      jarEngineRef.current = new JarEngine(world, canvasRef.current);
+      jarEngineRef.current.start();
     }
   }, []);
   useEffect(() => {
