@@ -115,10 +115,35 @@ function syncWorldWithEntities(
   toRemoveBodies.forEach((b) => world.destroyBody(b));
 }
 
+class WorldStepper {
+  private lastTime = 0;
+  private accumulator = 0;
+  private fixedTimeStep = 1 / 60;
+
+  start() {
+    this.lastTime = performance.now();
+  }
+
+  stepWorld(world: World, currentTime: number) {
+    const deltaTime = Math.min((currentTime - this.lastTime) / 1000, 0.1);
+    this.lastTime = currentTime;
+
+    // Accumulate time
+    this.accumulator += deltaTime;
+
+    // Fixed timestep physics updates
+    while (this.accumulator >= this.fixedTimeStep) {
+      world.step(this.fixedTimeStep);
+      this.accumulator -= this.fixedTimeStep;
+    }
+  }
+}
+
 class Renderer {
   private world: World;
   private canvas: HTMLCanvasElement;
   private started: boolean = false;
+  private worldStepper: WorldStepper = new WorldStepper();
 
   constructor(world: World, canvas: HTMLCanvasElement) {
     this.world = world;
@@ -128,14 +153,15 @@ class Renderer {
     // Start frame loop
     this.started = true;
     this.loop(0);
+    this.worldStepper.start();
   }
 
-  loop(_timeStamp: number) {
+  loop(currentTime: number) {
     if (!this.started) {
       return;
     }
 
-    this.world.step(1 / 60);
+    this.worldStepper.stepWorld(this.world, currentTime);
     this.clearCanvas();
 
     // Iterate over bodies
@@ -231,7 +257,7 @@ export default function Jar(props: JarProps) {
   useEffect(() => {
     if (!worldRef.current) {
       worldRef.current = new World({
-        gravity: { x: 0, y: -10 },
+        gravity: { x: 0, y: -15 },
         allowSleep: true,
       });
     }
